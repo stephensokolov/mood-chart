@@ -1,0 +1,1820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#2b6cb0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mood Chart">
+<link rel="manifest" href="manifest.json">
+<title>Mood Chart</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+  background: #edf2f7;
+  color: #1a202c;
+  min-height: 100vh;
+}
+
+/* ── HEADER ── */
+.app-header {
+  background: white;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.07);
+}
+
+.app-brand {
+  display: flex;
+  flex-direction: column;
+}
+.app-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #2d3748;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.app-sub {
+  font-size: 0.65rem;
+  color: #a0aec0;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+.hdr-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hdr-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #718096;
+  white-space: nowrap;
+}
+.hdr-field input[type="text"] {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 6px 10px;
+  font-size: 0.875rem;
+  width: 190px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.hdr-field input[type="text"]:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102,126,234,0.15);
+}
+
+.month-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+.nav-btn {
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 6px 18px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.12s;
+  user-select: none;
+}
+.nav-btn:hover { background: #f7fafc; border-color: #a0aec0; }
+.nav-btn:active { background: #edf2f7; }
+
+.month-label {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #2d3748;
+  width: 100px;
+  text-align: center;
+}
+
+/* ── SCROLL WRAPPER ── */
+.scroll-wrap {
+  padding: 20px 24px 32px;
+  overflow-x: hidden;
+}
+
+/* ── CARD ── */
+.chart-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+}
+
+/* ── SECTION HEADER BANNER ── */
+.section-banner {
+  padding: 9px 16px 6px;
+  border-bottom: 1px solid #f0f4f8;
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.section-banner-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #718096;
+}
+.section-banner-hint {
+  font-size: 0.68rem;
+  color: #a0aec0;
+}
+
+/* ── THE CHART TABLE ── */
+.chart-table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+}
+.chart-table .c-label { width: 120px; }
+.chart-table .c-day  { width: 28px; }
+
+/* ── HEADER ROW (day numbers) ── */
+.chart-table thead th {
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #edf2f7;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #718096;
+  background: #f7fafc;
+  text-align: center;
+  padding: 5px 2px;
+  white-space: nowrap;
+}
+.chart-table thead th.th-label-col {
+  text-align: left;
+  padding: 6px 6px 6px 8px;
+  border-right: 2px solid #e2e8f0 !important;
+  vertical-align: bottom;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: #f7fafc;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+}
+th.d-today {
+  background: #ebf8ff !important;
+  color: #2b6cb0 !important;
+  font-weight: 800 !important;
+}
+th.d-future { color: #cbd5e0 !important; }
+th.d-off    { background: #f7fafc !important; color: #e2e8f0 !important; }
+
+/* ── BODY CELLS common ── */
+.chart-table td {
+  border-right: 1px solid #edf2f7;
+  border-bottom: 1px solid #edf2f7;
+  height: 30px;
+  vertical-align: middle;
+}
+
+/* ── LABEL COLUMN ── */
+td.lbl {
+  border-right: 2px solid #e2e8f0 !important;
+  padding: 3px 6px 3px 8px;
+  background: #f7fafc;
+  cursor: default !important;
+  height: auto;
+  min-height: 26px;
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+}
+td.lbl .l-name {
+  font-size: 0.65rem;
+  font-weight: 800;
+  display: block;
+  line-height: 1.15;
+}
+td.lbl .l-sub {
+  font-size: 0.55rem;
+  color: #718096;
+  font-weight: 500;
+}
+td.lbl .l-desc {
+  display: none;
+}
+
+/* ── MOOD CELLS ── */
+td.mc {
+  cursor: pointer;
+  text-align: center;
+  font-size: 0.76rem;
+  font-weight: 900;
+  color: transparent;   /* ✕ hidden by default */
+  user-select: none;
+  transition: filter 0.1s;
+}
+td.mc:hover:not(.mc-off):not(.mc-future) { filter: brightness(0.87); }
+td.mc.mc-off    { background: #f7fafc !important; cursor: default; }
+td.mc.mc-future { cursor: default; opacity: 0.28; }
+td.mc.mc-marked { color: white; }   /* show ✕ */
+
+/* Mania colors (levels 0–3) */
+.lv0 { background: #fff5f5; } .lv0.mc-marked { background: #c53030; } .lv0.mc-range { background: #fed7d7; }
+.lv1 { background: #fffaf0; } .lv1.mc-marked { background: #c05621; } .lv1.mc-range { background: #fbd38d; }
+.lv2 { background: #fffaf0; } .lv2.mc-marked { background: #dd6b20; } .lv2.mc-range { background: #fbd38d; }
+.lv3 { background: #fffff0; } .lv3.mc-marked { background: #b7791f; } .lv3.mc-range { background: #faf089; }
+
+/* Baseline (level 4) */
+.lv4 { background: #f0fff4; } .lv4.mc-marked { background: #276749; } .lv4.mc-range { background: #9ae6b4; }
+
+/* Depression colors (levels 5–8) */
+.lv5 { background: #ebf8ff; } .lv5.mc-marked { background: #2b6cb0; } .lv5.mc-range { background: #90cdf4; }
+.lv6 { background: #ebf8ff; } .lv6.mc-marked { background: #2c5282; } .lv6.mc-range { background: #90cdf4; }
+.lv7 { background: #ebf4ff; } .lv7.mc-marked { background: #2a4365; } .lv7.mc-range { background: #bee3f8; }
+.lv8 { background: #ebf4ff; } .lv8.mc-marked { background: #1a365d; } .lv8.mc-range { background: #bee3f8; }
+
+/* Baseline row thick border */
+tr.baseline-row td {
+  border-top: 2.5px solid #38a169 !important;
+  border-bottom: 2.5px solid #38a169 !important;
+}
+tr.baseline-row td.lbl { background: #f0fff4 !important; }
+
+/* ── SLEEP ROW ── */
+tr.sleep-row td { border-top: 2px solid #e2e8f0; }
+td.sleep-lbl { background: #f7fafc; border-right: 2px solid #e2e8f0 !important; padding: 3px 6px 3px 8px; position: sticky; left: 0; z-index: 2; box-shadow: 2px 0 4px rgba(0,0,0,0.06); }
+td.sleep-cell { padding: 0; background: white; }
+
+input.sleep-inp {
+  width: 100%;
+  height: 32px;
+  border: none;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #2b6cb0;
+  background: transparent;
+  outline: none;
+  cursor: pointer;
+  -moz-appearance: textfield;
+}
+input.sleep-inp::-webkit-inner-spin-button,
+input.sleep-inp::-webkit-outer-spin-button { -webkit-appearance: none; }
+input.sleep-inp:focus { background: #ebf8ff; }
+input.sleep-inp::placeholder { color: #cbd5e0; font-weight: 400; font-size: 0.75rem; }
+input.sleep-inp:disabled { background: #f7fafc; cursor: default; }
+
+/* ── MENSTRUAL ROW ── */
+tr.mens-row td { border-top: 1px solid #e2e8f0; }
+td.mens-lbl { background: #f7fafc; border-right: 2px solid #e2e8f0 !important; padding: 3px 6px 3px 8px; position: sticky; left: 0; z-index: 2; box-shadow: 2px 0 4px rgba(0,0,0,0.06); }
+td.mens-cell {
+  text-align: center;
+  cursor: pointer;
+  background: white;
+  height: 32px;
+}
+td.mens-cell:hover:not(.mc-off):not(.mc-future) { background: #fff0f6; }
+td.mens-cell.mc-off    { cursor: default; background: #f7fafc; }
+td.mens-cell.mc-future { cursor: default; opacity: 0.28; }
+
+.mdot {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  border: 2px solid #e2e8f0;
+  background: transparent;
+  transition: all 0.15s;
+  vertical-align: middle;
+}
+td.mens-cell:hover:not(.mc-off):not(.mc-future) .mdot { border-color: #ed64a6; }
+td.mens-cell.mens-marked .mdot { background: #ed64a6; border-color: #ed64a6; }
+
+/* ── HEADER / FOOTER outside scroll ── */
+#chartHeader {
+  background: white;
+  border-radius: 12px 12px 0 0;
+  overflow: hidden;
+  box-shadow: 0 -1px 4px rgba(0,0,0,0.03);
+}
+#chartFooter {
+  background: white;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05);
+}
+#chartHeader + .chart-card {
+  border-radius: 0;
+}
+.depr-bar {
+  padding: 5px 12px;
+  background: #ebf4ff;
+  border-top: 2px solid #bee3f8;
+}
+td.depr-lbl {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+  padding: 3px 6px 3px 8px;
+}
+.depr-bar span {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #2a4365;
+  font-style: italic;
+}
+
+.legend-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 9px 16px;
+  border-top: 1px solid #e2e8f0;
+  background: #f7fafc;
+}
+.leg-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.68rem;
+  color: #718096;
+}
+.leg-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.footer-legend {
+  padding: 10px 14px;
+  border-top: 1px solid #e2e8f0;
+  background: #f7fafc;
+}
+.legend-section {
+  margin-bottom: 8px;
+}
+.legend-section:last-child {
+  margin-bottom: 0;
+}
+.legend-heading {
+  font-size: 0.72rem;
+  font-weight: 800;
+  margin-bottom: 2px;
+}
+.legend-row {
+  font-size: 0.62rem;
+  color: #4a5568;
+  line-height: 1.5;
+}
+.legend-row strong {
+  color: #2d3748;
+}
+.leg-hint {
+  margin-left: auto;
+  font-size: 0.67rem;
+  color: #a0aec0;
+  font-style: italic;
+}
+
+/* ── MOBILE RESPONSIVE HEADER ── */
+@media (max-width: 600px) {
+  .app-header {
+    padding: 6px 10px;
+    gap: 0;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    row-gap: 5px;
+    column-gap: 8px;
+    align-items: center;
+  }
+  .app-brand {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .app-sub { display: none; }
+  .app-title { font-size: 0.85rem; white-space: nowrap; }
+
+  .hdr-field {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .hdr-field label { display: none; }
+  .hdr-field input[type="text"] {
+    width: 100%;
+    font-size: 0.8rem;
+    padding: 4px 8px;
+  }
+
+  .month-nav {
+    grid-column: 1;
+    grid-row: 2;
+    margin-left: 0;
+    gap: 2px;
+  }
+  .month-label {
+    font-size: 0.78rem;
+    width: 62px;
+    white-space: nowrap;
+  }
+  .nav-btn {
+    padding: 3px 6px;
+    font-size: 0.72rem;
+    white-space: nowrap;
+  }
+
+  .hdr-actions {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    gap: 4px;
+    justify-content: flex-end;
+  }
+  .backup-btn, .export-btn {
+    padding: 3px 7px;
+    font-size: 0.65rem;
+    border-radius: 5px;
+    gap: 3px;
+  }
+  .backup-btn .btn-label, .export-btn .btn-label { display: none; }
+  .backup-btn .btn-label-short, .export-btn .btn-label-short { display: inline; }
+  .backup-btn svg, .export-btn svg { width: 10px; height: 10px; }
+
+  .scroll-wrap { padding: 8px 4px 20px; }
+}
+
+/* ── BACKUP BUTTON ── */
+.backup-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 6px 14px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #4a5568;
+  cursor: pointer;
+  transition: all 0.12s;
+  user-select: none;
+  white-space: nowrap;
+}
+.backup-btn:hover  { background: #f7fafc; border-color: #a0aec0; color: #2d3748; }
+.backup-btn:active { background: #edf2f7; }
+.backup-btn svg    { flex-shrink: 0; }
+
+/* ── EXPORT BUTTON ── */
+.export-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #2b6cb0;
+  border: none;
+  border-radius: 7px;
+  padding: 7px 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  transition: background 0.14s, transform 0.1s;
+  user-select: none;
+  white-space: nowrap;
+}
+.export-btn:hover  { background: #2c5282; }
+.export-btn:active { background: #1a365d; transform: scale(0.98); }
+.export-btn svg    { flex-shrink: 0; }
+.btn-label-short   { display: none; }
+
+/* ── EXPORT MODAL OVERLAY ── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  padding: 24px;
+}
+.modal-overlay.hidden { display: none; }
+
+.modal-box {
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  padding: 28px 32px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+}
+.modal-box h2 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #2d3748;
+  margin-bottom: 8px;
+}
+.modal-box p {
+  font-size: 0.85rem;
+  color: #718096;
+  margin-bottom: 22px;
+  line-height: 1.5;
+}
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.modal-btn-primary {
+  background: #2b6cb0;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 22px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.14s;
+}
+.modal-btn-primary:hover { background: #2c5282; }
+.modal-btn-secondary {
+  background: #edf2f7;
+  color: #4a5568;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 22px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s;
+}
+.modal-btn-secondary:hover { background: #e2e8f0; }
+.modal-preview {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 18px;
+  background: #f7fafc;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.modal-preview img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* ── DATE-RANGE DIALOG ── */
+.range-modal-box {
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  padding: 28px 32px 24px;
+  max-width: 400px;
+  width: 100%;
+}
+.range-modal-box h2 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #2d3748;
+  margin-bottom: 6px;
+  text-align: center;
+}
+.range-modal-box .range-subtitle {
+  font-size: 0.82rem;
+  color: #718096;
+  text-align: center;
+  margin-bottom: 22px;
+  line-height: 1.5;
+}
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.range-row label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #4a5568;
+  width: 44px;
+  flex-shrink: 0;
+  text-align: right;
+}
+.range-select {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 7px 10px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #2d3748;
+  background: white;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23a0aec0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  padding-right: 28px;
+}
+.range-select:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,0.15); }
+.range-select.sel-month { flex: 1; }
+.range-select.sel-year  { width: 88px; flex-shrink: 0; }
+.range-error {
+  font-size: 0.78rem;
+  color: #c53030;
+  text-align: center;
+  min-height: 18px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.range-divider {
+  border: none;
+  border-top: 1px solid #e2e8f0;
+  margin: 14px 0 16px;
+}
+
+/* ── BACKUP / RESTORE MODAL ── */
+.backup-modal-box {
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+  padding: 26px 28px 22px;
+  max-width: 420px;
+  width: 100%;
+}
+.backup-modal-box h2 {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #2d3748;
+  margin-bottom: 18px;
+  text-align: center;
+}
+.br-panel {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 16px 18px;
+  margin-bottom: 12px;
+}
+.br-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: #2d3748;
+  margin-bottom: 5px;
+}
+.br-panel-title svg { flex-shrink: 0; }
+.br-panel p {
+  font-size: 0.78rem;
+  color: #718096;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+.br-btn-download {
+  width: 100%;
+  background: #2b6cb0;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  padding: 9px 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.14s;
+}
+.br-btn-download:hover { background: #2c5282; }
+.br-btn-restore {
+  width: 100%;
+  background: #f7fafc;
+  color: #4a5568;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 7px;
+  padding: 9px 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.14s;
+}
+.br-btn-restore:hover { background: #edf2f7; border-color: #a0aec0; }
+.br-status {
+  font-size: 0.76rem;
+  min-height: 16px;
+  margin-top: 8px;
+  text-align: center;
+  font-weight: 600;
+}
+.br-status.ok  { color: #276749; }
+.br-status.err { color: #c53030; }
+.br-close-row {
+  text-align: center;
+  margin-top: 6px;
+}
+.br-close-row button {
+  background: none;
+  border: none;
+  color: #a0aec0;
+  font-size: 0.82rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+.br-close-row button:hover { color: #4a5568; }
+
+/* Confirm-overwrite sub-panel (hidden by default) */
+.br-confirm {
+  display: none;
+  background: #fffaf0;
+  border: 1.5px solid #f6ad55;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 10px;
+}
+.br-confirm.visible { display: block; }
+.br-confirm p {
+  font-size: 0.78rem;
+  color: #744210;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+.br-confirm-btns { display: flex; gap: 8px; }
+.br-confirm-btns button {
+  flex: 1;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.br-confirm-yes { background: #c05621; color: white; }
+.br-confirm-yes:hover { background: #9c4221; }
+.br-confirm-no  { background: #e2e8f0; color: #4a5568; }
+.br-confirm-no:hover { background: #cbd5e0; }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-brand">
+    <div class="app-title">Mood Chart</div>
+    <div class="app-sub">Daily Mood Tracking · LCM-SP</div>
+  </div>
+  <div class="hdr-field">
+    <label for="nameInp">Patient:</label>
+    <input type="text" id="nameInp" placeholder="Enter patient name…" autocomplete="off">
+  </div>
+  <div class="month-nav">
+    <button class="nav-btn" id="prevBtn">&#8249; Prev</button>
+    <div class="month-label" id="monthLbl">—</div>
+    <button class="nav-btn" id="nextBtn">Next &#8250;</button>
+  </div>
+  <div class="hdr-actions">
+  <button class="backup-btn" id="backupBtn">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
+    </svg>
+    <span class="btn-label">Backup / Restore</span><span class="btn-label-short">Backup</span>
+  </button>
+  <button class="export-btn" id="exportBtn">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    </svg>
+    <span class="btn-label">Export Chart</span><span class="btn-label-short">Export</span>
+  </button>
+  </div>
+</header>
+
+<!-- Backup / Restore modal -->
+<div class="modal-overlay hidden" id="backupModal">
+  <div class="backup-modal-box">
+    <h2>Backup &amp; Restore</h2>
+
+    <!-- BACKUP panel -->
+    <div class="br-panel">
+      <div class="br-panel-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2b6cb0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download Backup
+      </div>
+      <p>Save all your chart data as a file on this device. Keep it somewhere safe — you can use it to restore your data later or move it to another device.</p>
+      <button class="br-btn-download" id="brDownloadBtn">⬇ Download Backup File</button>
+    </div>
+
+    <!-- RESTORE panel -->
+    <div class="br-panel">
+      <div class="br-panel-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#276749" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/>
+        </svg>
+        Restore from Backup
+      </div>
+      <p>Load a previously saved backup file. Any months already in the file will be overwritten with the backup data. Other months are not affected.</p>
+      <button class="br-btn-restore" id="brRestoreBtn">📂 Choose Backup File…</button>
+      <input type="file" id="brFileInput" accept=".json" style="display:none">
+
+      <!-- Confirm overwrite sub-panel -->
+      <div class="br-confirm" id="brConfirm">
+        <p id="brConfirmMsg"></p>
+        <div class="br-confirm-btns">
+          <button class="br-confirm-yes" id="brConfirmYes">Yes, Restore</button>
+          <button class="br-confirm-no"  id="brConfirmNo">Cancel</button>
+        </div>
+      </div>
+
+      <div class="br-status" id="brStatus"></div>
+    </div>
+
+    <div class="br-close-row">
+      <button id="brCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Step 1: Date-range selection modal -->
+<div class="modal-overlay hidden" id="rangeModal">
+  <div class="range-modal-box">
+    <h2>Export Chart</h2>
+    <p class="range-subtitle">Choose the first and last month to include in the exported image.</p>
+
+    <div class="range-row">
+      <label>From:</label>
+      <select class="range-select sel-month" id="rangeStartMonth"></select>
+      <select class="range-select sel-year"  id="rangeStartYear"></select>
+    </div>
+    <div class="range-row">
+      <label>To:</label>
+      <select class="range-select sel-month" id="rangeEndMonth"></select>
+      <select class="range-select sel-year"  id="rangeEndYear"></select>
+    </div>
+
+    <div class="range-error" id="rangeError"></div>
+    <hr class="range-divider">
+    <div class="modal-actions">
+      <button class="modal-btn-primary"    id="rangeConfirmBtn">Preview →</button>
+      <button class="modal-btn-secondary"  id="rangeCancelBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Step 2: Preview + download modal -->
+<div class="modal-overlay hidden" id="exportModal">
+  <div class="modal-box">
+    <h2>Export Chart</h2>
+    <p>Preview of the chart image below. Click <strong>Download PNG</strong> to save it, then attach it to an email to your provider.</p>
+    <div class="modal-preview"><img id="exportPreview" src="" alt="Chart preview"></div>
+    <div class="modal-actions">
+      <button class="modal-btn-primary" id="downloadBtn">⬇ Download PNG</button>
+      <button class="modal-btn-secondary" id="closeModalBtn">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<div class="scroll-wrap">
+  <div id="chartHeader"></div>
+  <div class="chart-card" id="chartCard"></div>
+  <div id="chartFooter"></div>
+</div>
+
+<script>
+'use strict';
+
+// ─────────────────────────────────────────
+//  MOOD LEVEL DEFINITIONS
+// ─────────────────────────────────────────
+const LEVELS = [
+  { id:0, side:'mania',      name:'SEVERE',   sub:'',     desc:'Essentially Incapacitated or Hospitalized',
+    lborder:'#c53030', lcolor:'#c53030' },
+  { id:1, side:'mania',      name:'MODERATE', sub:'high', desc:'GREAT Difficulty with Goal-Oriented Activity',
+    lborder:'#c05621', lcolor:'#c05621' },
+  { id:2, side:'mania',      name:'MODERATE', sub:'low',  desc:'SOME Difficulty with Goal-Oriented Activity',
+    lborder:'#dd6b20', lcolor:'#dd6b20' },
+  { id:3, side:'mania',      name:'MILD',     sub:'',     desc:'More Energized & Productive with Little or No Functional Impairment',
+    lborder:'#d69e2e', lcolor:'#b7791f' },
+  { id:4, side:'baseline',   name:'Baseline', sub:'',     desc:'Normal / Euthymic Mood',
+    lborder:'#38a169', lcolor:'#276749' },
+  { id:5, side:'depression', name:'MILD',     sub:'',     desc:'Little or No Functional Impairment',
+    lborder:'#4299e1', lcolor:'#2b6cb0' },
+  { id:6, side:'depression', name:'MODERATE', sub:'low',  desc:'Functioning with SOME Effort',
+    lborder:'#3182ce', lcolor:'#2c5282' },
+  { id:7, side:'depression', name:'MODERATE', sub:'high', desc:'Functioning with GREAT Effort',
+    lborder:'#2b6cb0', lcolor:'#2a4365' },
+  { id:8, side:'depression', name:'SEVERE',   sub:'',     desc:'Essentially Incapacitated or Hospitalized',
+    lborder:'#2c5282', lcolor:'#1a365d' },
+];
+
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun',
+                'Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ─────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────
+const _now = new Date();
+let cur = { year: _now.getFullYear(), month: _now.getMonth() };
+let patientName = '';
+
+// monthData shape: { moods:{day:[lvlId,...]}, sleep:{day:num}, menstrual:{day:true} }
+let monthData = { moods:{}, sleep:{}, menstrual:{} };
+
+// ─────────────────────────────────────────
+//  STORAGE
+// ─────────────────────────────────────────
+function skey() {
+  const p = (patientName || '__').toLowerCase().replace(/[^a-z0-9]/g,'_');
+  return `mc_${p}_${cur.year}_${String(cur.month+1).padStart(2,'0')}`;
+}
+
+function loadMonth() {
+  try {
+    const raw = localStorage.getItem(skey());
+    monthData = raw ? JSON.parse(raw) : {};
+  } catch(e) { monthData = {}; }
+  if (!monthData.moods)    monthData.moods    = {};
+  if (!monthData.sleep)    monthData.sleep    = {};
+  if (!monthData.menstrual) monthData.menstrual = {};
+}
+
+function saveMonth() {
+  try {
+    localStorage.setItem(skey(), JSON.stringify(monthData));
+    localStorage.setItem('mc_patient', patientName);
+  } catch(e) {}
+}
+
+// ─────────────────────────────────────────
+//  DATE HELPERS
+// ─────────────────────────────────────────
+function daysInMonth()  { return new Date(cur.year, cur.month+1, 0).getDate(); }
+function isToday(d)     { return _now.getFullYear()===cur.year && _now.getMonth()===cur.month && _now.getDate()===d; }
+function isFuture(d)    {
+  const today = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate());
+  return new Date(cur.year, cur.month, d) > today;
+}
+
+// ─────────────────────────────────────────
+//  MOOD CELL STATE
+// ─────────────────────────────────────────
+function marksFor(d) { return monthData.moods[d] || []; }
+
+function cellStatus(d, lid) {
+  // returns: 'marked' | 'range' | ''
+  const m = marksFor(d);
+  if (m.includes(lid)) return 'marked';
+  if (m.length === 2) {
+    const lo = Math.min(...m), hi = Math.max(...m);
+    if (lid > lo && lid < hi) return 'range';
+  }
+  return '';
+}
+
+// ─────────────────────────────────────────
+//  INTERACTIONS
+// ─────────────────────────────────────────
+window.toggleMood = function(d, lid) {
+  const total = daysInMonth();
+  if (d > total || isFuture(d)) return;
+
+  let marks = [...marksFor(d)];
+  const idx = marks.indexOf(lid);
+
+  if (idx >= 0) {
+    // Unmark
+    marks.splice(idx, 1);
+  } else if (marks.length < 2) {
+    // Add mark
+    marks.push(lid);
+  } else {
+    // Already 2 — replace the one that is furthest from the new click
+    const d0 = Math.abs(marks[0] - lid);
+    const d1 = Math.abs(marks[1] - lid);
+    marks[d0 >= d1 ? 0 : 1] = lid;
+  }
+
+  if (marks.length === 0) delete monthData.moods[d];
+  else monthData.moods[d] = marks;
+
+  saveMonth();
+  refreshMoodColumn(d);
+};
+
+window.toggleMenstrual = function(d) {
+  const total = daysInMonth();
+  if (d > total || isFuture(d)) return;
+
+  if (monthData.menstrual[d]) delete monthData.menstrual[d];
+  else monthData.menstrual[d] = true;
+
+  saveMonth();
+  const cell = document.getElementById(`men-${d}`);
+  if (cell) cell.classList.toggle('mens-marked', !!monthData.menstrual[d]);
+};
+
+window.onSleepBlur = function(d, val) {
+  const n = parseFloat(val);
+  if (val === '' || isNaN(n)) delete monthData.sleep[d];
+  else if (n >= 0 && n <= 24) monthData.sleep[d] = n;
+  saveMonth();
+  // Recolor input
+  const inp = document.getElementById(`sl-${d}`);
+  if (inp) inp.style.color = (monthData.sleep[d] !== undefined) ? '#2b6cb0' : '#a0aec0';
+};
+
+// ─────────────────────────────────────────
+//  REFRESH JUST ONE COLUMN (FAST PATH)
+// ─────────────────────────────────────────
+function refreshMoodColumn(d) {
+  LEVELS.forEach(lv => {
+    const el = document.getElementById(`mc-${lv.id}-${d}`);
+    if (!el) return;
+    el.className = buildMoodCellClass(d, lv.id);
+  });
+}
+
+function buildMoodCellClass(d, lid) {
+  const total = daysInMonth();
+  let cls = `mc lv${lid}`;
+  if (d > total)      return cls + ' mc-off';
+  if (isFuture(d))    cls += ' mc-future';
+  const st = cellStatus(d, lid);
+  if (st === 'marked') cls += ' mc-marked';
+  else if (st === 'range') cls += ' mc-range';
+  return cls;
+}
+
+// ─────────────────────────────────────────
+//  FULL RENDER
+// ─────────────────────────────────────────
+function render() {
+  const total = daysInMonth();
+  let h = '';
+
+  // Section banner (rendered outside scroll container)
+  document.getElementById('chartHeader').innerHTML = `<div class="section-banner">
+    <span class="section-banner-title">Mood Chart</span>
+    <span class="section-banner-hint">Click/tap a cell to mark. Click a second cell in the same column to show a range. Click again to unmark.</span>
+  </div>`;
+
+  // ── TABLE ──
+  h += `<table class="chart-table"><colgroup>`;
+  h += `<col class="c-label">`;
+  for (let i = 1; i <= 31; i++) h += `<col class="c-day">`;
+  h += `</colgroup>`;
+
+  // ── THEAD: day numbers + mania label ──
+  h += `<thead>`;
+  h += `<tr>`;
+  h += `<th class="th-label-col" style="padding:4px 6px 4px 8px;">
+    <span style="color:#718096;font-weight:600;font-size:0.68rem;">Days of Month</span>
+  </th>`;
+  for (let d = 1; d <= 31; d++) {
+    let cls = '';
+    if      (d > total)    cls = 'd-off';
+    else if (isToday(d))   cls = 'd-today';
+    else if (isFuture(d))  cls = 'd-future';
+    h += `<th class="${cls}">${d}</th>`;
+  }
+  h += `</tr>`;
+  h += `<tr class="mania-label-row">`;
+  h += `<th class="th-label-col" style="text-align:left;padding:4px 6px 4px 8px;">
+    <span style="font-size:0.78rem;font-weight:800;color:#c53030;font-style:italic;">↑  ELEVATED</span>
+  </th>`;
+  for (let d = 1; d <= 31; d++) h += `<th style="background:#f7fafc;border:none;"></th>`;
+  h += `</tr>`;
+  h += `</thead>`;
+
+  // ── TBODY: mood rows ──
+  h += `<tbody>`;
+  LEVELS.forEach(lv => {
+    const isBL = lv.side === 'baseline';
+    h += `<tr${isBL ? ' class="baseline-row"' : ''}>`;
+
+    // Label cell
+    h += `<td class="lbl" style="border-left:4px solid ${lv.lborder};">`;
+    h += `<span class="l-name" style="color:${lv.lcolor};">${lv.name}`;
+    if (lv.sub) h += ` <span class="l-sub">(${lv.sub})</span>`;
+    h += `</span>`;
+    h += `<span class="l-desc">${lv.desc}</span>`;
+    h += `</td>`;
+
+    // Day cells
+    for (let d = 1; d <= 31; d++) {
+      const cls = buildMoodCellClass(d, lv.id);
+      const canClick = d <= total && !isFuture(d);
+      const click = canClick ? `onclick="toggleMood(${d},${lv.id})"` : '';
+      h += `<td id="mc-${lv.id}-${d}" class="${cls}" ${click}>✕</td>`;
+    }
+
+    h += `</tr>`;
+  });
+  h += `</tbody>`;
+
+  // ── DEPRESSION BAR (inside table) ──
+  h += `<tbody><tr class="depr-row">`;
+  h += `<td class="depr-bar depr-lbl"><span>↓ DEPRESSED</span></td>`;
+  for (let d = 1; d <= 31; d++) h += `<td class="depr-bar"></td>`;
+  h += `</tr>`;
+  h += `<tr class="spacer-row"><td colspan="32" style="height:18px;background:#f7fafc;border:none;padding:0;"></td></tr>`;
+  h += `</tbody>`;
+
+  // ── SLEEP ROW ──
+  h += `<tbody><tr class="sleep-row">`;
+  h += `<td class="lbl sleep-lbl" style="border-left:4px solid #805ad5;">
+    <span class="l-name" style="color:#553c9a;">Hours of Sleep</span>
+    <span class="l-desc">Enter nightly hours slept (e.g. 7.5)</span>
+  </td>`;
+  for (let d = 1; d <= 31; d++) {
+    if (d > total) {
+      h += `<td class="sleep-cell" style="background:#f7fafc;"></td>`;
+    } else {
+      const val  = monthData.sleep[d] !== undefined ? monthData.sleep[d] : '';
+      const dis  = isFuture(d) ? 'disabled' : '';
+      const col  = val !== '' ? '#2b6cb0' : '#a0aec0';
+      h += `<td class="sleep-cell">
+        <input type="number" id="sl-${d}" class="sleep-inp"
+          min="0" max="24" step="0.5"
+          value="${val}" placeholder="—"
+          ${dis}
+          style="color:${col};"
+          onblur="onSleepBlur(${d}, this.value)"
+          onkeydown="if(event.key==='Enter')this.blur()">
+      </td>`;
+    }
+  }
+  h += `</tr></tbody>`;
+
+  // ── MENSTRUAL ROW ──
+  h += `<tbody><tr class="mens-row">`;
+  h += `<td class="lbl mens-lbl" style="border-left:4px solid #ed64a6;">
+    <span class="l-name" style="color:#b83280;">Menstrual Period</span>
+    <span class="l-desc">Tap to mark/unmark period days</span>
+  </td>`;
+  for (let d = 1; d <= 31; d++) {
+    if (d > total) {
+      h += `<td class="mens-cell mc-off"></td>`;
+    } else {
+      let cls = 'mens-cell';
+      if (isFuture(d)) cls += ' mc-future';
+      if (monthData.menstrual[d]) cls += ' mens-marked';
+      const click = !isFuture(d) ? `onclick="toggleMenstrual(${d})"` : '';
+      h += `<td id="men-${d}" class="${cls}" ${click}><span class="mdot"></span></td>`;
+    }
+  }
+  h += `</tr></tbody>`;
+
+  h += `</table>`;
+
+  document.getElementById('chartCard').innerHTML = h;
+
+  // ── FOOTER (outside scroll container) ──
+  let fh = '';
+  fh += `<div class="footer-legend">
+    <div class="legend-section">
+      <div class="legend-heading" style="color:#c53030;">MANIA</div>
+      <div class="legend-row"><strong>Severe</strong> — essentially incapacitated or hospitalized</div>
+      <div class="legend-row"><strong>High Moderate</strong> — GREAT difficulty with goal-oriented activity</div>
+      <div class="legend-row"><strong>Low Moderate</strong> — SOME difficulty with goal-oriented activity</div>
+      <div class="legend-row"><strong>Mild</strong> — more energized &amp; productive with little or no functional impairment</div>
+    </div>
+    <div class="legend-section">
+      <div class="legend-heading" style="color:#2a4365;">DEPRESSED</div>
+      <div class="legend-row"><strong>Mild</strong> — little or no functional impairment</div>
+      <div class="legend-row"><strong>Low Moderate</strong> — functioning with SOME effort</div>
+      <div class="legend-row"><strong>High Moderate</strong> — functioning with GREAT effort</div>
+      <div class="legend-row"><strong>Severe</strong> — essentially incapacitated or hospitalized</div>
+    </div>
+  </div>`;
+  fh += `<div class="legend-bar">
+    <span class="leg-hint">Data saved automatically in this browser</span>
+  </div>`;
+  document.getElementById('chartFooter').innerHTML = fh;
+}
+
+// ─────────────────────────────────────────
+//  MONTH NAVIGATION
+// ─────────────────────────────────────────
+function updateMonthLabel() {
+  document.getElementById('monthLbl').textContent =
+    `${MONTHS[cur.month]} ${cur.year}`;
+}
+
+function goMonth(delta) {
+  cur.month += delta;
+  if (cur.month > 11) { cur.month = 0;  cur.year++; }
+  if (cur.month <  0) { cur.month = 11; cur.year--; }
+  loadMonth();
+  updateMonthLabel();
+  render();
+}
+
+// ─────────────────────────────────────────
+//  EXPORT TO PNG (Canvas)
+// ─────────────────────────────────────────
+function buildExportCanvas(expYear, expMonth) {
+  // Load this month's data independently from storage
+  const p = (patientName || '__').toLowerCase().replace(/[^a-z0-9]/g, '_');
+  const key = `mc_${p}_${expYear}_${String(expMonth + 1).padStart(2, '0')}`;
+  let data = {};
+  try { const raw = localStorage.getItem(key); data = raw ? JSON.parse(raw) : {}; } catch(e) {}
+  if (!data.moods)     data.moods     = {};
+  if (!data.sleep)     data.sleep     = {};
+  if (!data.menstrual) data.menstrual = {};
+
+  const total = new Date(expYear, expMonth + 1, 0).getDate();
+  const isNowMonth = _now.getFullYear() === expYear && _now.getMonth() === expMonth;
+  function _isToday(d)  { return isNowMonth && _now.getDate() === d; }
+  function _isFuture(d) {
+    const today = new Date(_now.getFullYear(), _now.getMonth(), _now.getDate());
+    return new Date(expYear, expMonth, d) > today;
+  }
+  function _cellStatus(d, lid) {
+    const m = data.moods[d] || [];
+    if (m.includes(lid)) return 'marked';
+    if (m.length === 2) {
+      const lo = Math.min(...m), hi = Math.max(...m);
+      if (lid > lo && lid < hi) return 'range';
+    }
+    return '';
+  }
+
+  const SCALE  = 2;          // retina quality
+
+  // Layout
+  const LW     = 208;        // label column width
+  const DW     = 30;         // day column width
+  const RH     = 28;         // mood row height
+  const HDR_H  = 26;         // day-number header height
+  const SLEEP_H= 28;
+  const MENS_H = 28;
+  const TITLE_H= 52;
+  const BAND_H = 10;         // mania / depression colour band
+  const LEG_H  = 38;
+  const FOOT_H = 20;         // generated-on footer
+  const PAD_X  = 14;
+  const PAD_Y  = 14;
+
+  const GRID_W = LW + 31 * DW;
+  const W = PAD_X + GRID_W + PAD_X;
+  const H = PAD_Y + TITLE_H + BAND_H + HDR_H
+          + LEVELS.length * RH
+          + SLEEP_H + MENS_H + BAND_H
+          + LEG_H + FOOT_H + PAD_Y;
+
+  const canvas  = document.createElement('canvas');
+  canvas.width  = W  * SCALE;
+  canvas.height = H  * SCALE;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(SCALE, SCALE);
+
+  // ── helpers ──
+  const font = (sz, w, style) =>
+    `${style||''} ${w||'normal'} ${sz}px -apple-system,BlinkMacSystemFont,Arial,sans-serif`.trim();
+
+  function rect(x, y, w, h, fill) {
+    ctx.fillStyle = fill;
+    ctx.fillRect(x, y, w, h);
+  }
+  function hline(x, y, w, color, lw) {
+    ctx.strokeStyle = color; ctx.lineWidth = lw||0.5;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x+w, y); ctx.stroke();
+  }
+  function vline(x, y, h, color, lw) {
+    ctx.strokeStyle = color; ctx.lineWidth = lw||0.5;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y+h); ctx.stroke();
+  }
+  function text(str, x, y, fill, sz, weight, align, style) {
+    ctx.font = font(sz||10, weight||'normal', style||'');
+    ctx.fillStyle = fill;
+    ctx.textAlign = align || 'left';
+    ctx.fillText(str, x, y);
+    ctx.textAlign = 'left';
+  }
+  function clipText(str, x, y, maxW, fill, sz, weight) {
+    ctx.font = font(sz||10, weight||'normal');
+    ctx.fillStyle = fill;
+    ctx.save();
+    ctx.beginPath(); ctx.rect(x, y - 12, maxW, 14); ctx.clip();
+    ctx.fillText(str, x, y);
+    ctx.restore();
+  }
+  function drawX(cx, cy, r, color) {
+    ctx.strokeStyle = color; ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(cx-r, cy-r); ctx.lineTo(cx+r, cy+r);
+    ctx.moveTo(cx+r, cy-r); ctx.lineTo(cx-r, cy+r);
+    ctx.stroke();
+  }
+
+  // Level colours
+  const BG  = ['#fff5f5','#fffaf0','#fffaf0','#fffff0','#f0fff4','#ebf8ff','#ebf8ff','#ebf4ff','#ebf4ff'];
+  const MRK = ['#c53030','#c05621','#dd6b20','#b7791f','#276749','#2b6cb0','#2c5282','#2a4365','#1a365d'];
+  const RNG = ['#fed7d7','#fbd38d','#fbd38d','#faf089','#9ae6b4','#90cdf4','#90cdf4','#bee3f8','#bee3f8'];
+  const LBD = ['#c53030','#c05621','#dd6b20','#d69e2e','#38a169','#4299e1','#3182ce','#2b6cb0','#2c5282'];
+  const LCL = ['#c53030','#c05621','#dd6b20','#b7791f','#276749','#2b6cb0','#2c5282','#2a4365','#1a365d'];
+
+  // ── WHITE BACKGROUND ──
+  rect(0, 0, W, H, '#ffffff');
+
+  let gx = PAD_X; // grid left edge
+  let y  = PAD_Y;
+
+  // ── TITLE ──
+  text('Mood Chart', gx, y + 18, '#1a202c', 17, '800');
+  const patient   = patientName || 'Patient';
+  const monthStr  = `${MONTHS[expMonth]} ${expYear}`;
+  text(`${patient}  ·  ${monthStr}`, gx, y + 36, '#718096', 12, '600');
+  y += TITLE_H;
+
+  // ── MANIA BAND ──
+  rect(gx, y, GRID_W, BAND_H, '#fff5f5');
+  rect(gx, y + BAND_H - 2, GRID_W, 2, '#fed7d7');
+  text('↑  MANIA / ELEVATED', gx + LW + 4, y + 7, '#c53030', 8, '800', 'left', 'italic');
+  y += BAND_H;
+
+  // ── DAY NUMBER HEADER ──
+  rect(gx, y, LW, HDR_H, '#f7fafc');
+  text('Days of Month', gx + 8, y + 16, '#718096', 9, '700');
+  vline(gx + LW, y, HDR_H, '#e2e8f0', 2);
+
+  for (let d = 1; d <= 31; d++) {
+    const cx = gx + LW + (d-1)*DW;
+    const off = d > total;
+    const tod = !off && _isToday(d);
+    const fut = !off && _isFuture(d);
+    rect(cx, y, DW, HDR_H, tod ? '#ebf8ff' : '#f7fafc');
+    text(
+      String(d), cx + DW/2, y + 17,
+      off ? '#e2e8f0' : (tod ? '#2b6cb0' : (fut ? '#cbd5e0' : '#718096')),
+      9, tod ? '800' : '600', 'center'
+    );
+    vline(cx + DW, y, HDR_H, '#e8edf2', 0.5);
+  }
+  hline(gx, y + HDR_H, GRID_W, '#e2e8f0', 1);
+  y += HDR_H;
+
+  // ── MOOD ROWS ──
+  const gridTop = y;
+  LEVELS.forEach((lv, ri) => {
+    const isBL = lv.side === 'baseline';
+
+    // Label cell
+    rect(gx, y, LW, RH, isBL ? '#f0fff4' : '#f7fafc');
+    rect(gx, y, 4, RH, LBD[ri]);   // left colour bar
+    text(lv.name + (lv.sub ? ` (${lv.sub})` : ''), gx + 9, y + 11, LCL[ri], 8, '800');
+    clipText(lv.desc, gx + 9, y + 21, LW - 14, '#a0aec0', 7.5, 'normal');
+    vline(gx + LW, y, RH, '#e2e8f0', 2);
+
+    // Day cells
+    for (let d = 1; d <= 31; d++) {
+      const cx  = gx + LW + (d-1)*DW;
+      const off = d > total;
+      const fut = !off && _isFuture(d);
+      const st  = off ? 'off' : _cellStatus(d, lv.id);
+
+      let bg = off ? '#f7fafc' : BG[ri];
+      if (st === 'marked') bg = MRK[ri];
+      else if (st === 'range') bg = RNG[ri];
+
+      ctx.globalAlpha = (!off && fut) ? 0.3 : 1;
+      rect(cx, y, DW, RH, bg);
+      ctx.globalAlpha = 1;
+
+      if (st === 'marked') {
+        drawX(cx + DW/2, y + RH/2, 5, 'rgba(255,255,255,0.9)');
+      }
+      vline(cx + DW, y, RH, '#edf2f7', 0.5);
+    }
+
+    // Draw baseline borders AFTER all cell fills so they are never painted over
+    if (isBL) {
+      rect(gx, y,             GRID_W, 2.5, '#38a169');  // top border
+      rect(gx, y + RH - 2.5, GRID_W, 2.5, '#38a169');  // bottom border
+    } else {
+      hline(gx, y + RH, GRID_W, '#edf2f7', 0.5);
+    }
+
+    y += RH;
+  });
+
+  // right & left outer borders for mood grid
+  vline(gx, gridTop, y - gridTop, '#e2e8f0', 1);
+  vline(gx + GRID_W, gridTop, y - gridTop, '#e2e8f0', 1);
+
+  // ── SLEEP ROW ──
+  hline(gx, y, GRID_W, '#e2e8f0', 2);
+  rect(gx, y, LW, SLEEP_H, '#f7fafc');
+  rect(gx, y, 4, SLEEP_H, '#805ad5');
+  text('Hours of Sleep', gx + 9, y + 11, '#553c9a', 8, '800');
+  text('Nightly hours slept', gx + 9, y + 21, '#a0aec0', 7.5);
+  vline(gx + LW, y, SLEEP_H, '#e2e8f0', 2);
+
+  for (let d = 1; d <= 31; d++) {
+    const cx  = gx + LW + (d-1)*DW;
+    const off = d > total;
+    rect(cx, y, DW, SLEEP_H, off ? '#f7fafc' : '#ffffff');
+    if (!off && data.sleep[d] !== undefined) {
+      text(String(data.sleep[d]), cx + DW/2, y + 17, '#2b6cb0', 8.5, '700', 'center');
+    }
+    vline(cx + DW, y, SLEEP_H, '#edf2f7', 0.5);
+  }
+  hline(gx, y + SLEEP_H, GRID_W, '#e2e8f0', 1);
+  vline(gx, y, SLEEP_H, '#e2e8f0', 1);
+  vline(gx + GRID_W, y, SLEEP_H, '#e2e8f0', 1);
+  y += SLEEP_H;
+
+  // ── MENSTRUAL ROW ──
+  rect(gx, y, LW, MENS_H, '#f7fafc');
+  rect(gx, y, 4, MENS_H, '#ed64a6');
+  text('Menstrual Period', gx + 9, y + 11, '#b83280', 8, '800');
+  text('Marked period days', gx + 9, y + 21, '#a0aec0', 7.5);
+  vline(gx + LW, y, MENS_H, '#e2e8f0', 2);
+
+  for (let d = 1; d <= 31; d++) {
+    const cx  = gx + LW + (d-1)*DW;
+    const off = d > total;
+    rect(cx, y, DW, MENS_H, off ? '#f7fafc' : '#ffffff');
+    if (!off && data.menstrual[d]) {
+      ctx.beginPath();
+      ctx.arc(cx + DW/2, y + MENS_H/2, 6, 0, Math.PI*2);
+      ctx.fillStyle = '#ed64a6';
+      ctx.fill();
+    }
+    vline(cx + DW, y, MENS_H, '#edf2f7', 0.5);
+  }
+  hline(gx, y + MENS_H, GRID_W, '#e2e8f0', 1);
+  vline(gx, y, MENS_H, '#e2e8f0', 1);
+  vline(gx + GRID_W, y, MENS_H, '#e2e8f0', 1);
+  y += MENS_H;
+
+  // ── DEPRESSION BAND ──
+  rect(gx, y, GRID_W, BAND_H, '#ebf4ff');
+  rect(gx, y, GRID_W, 2, '#bee3f8');
+  text('↓  DEPRESSION / DEPRESSED', gx + LW + 4, y + 7, '#2a4365', 8, '800', 'left', 'italic');
+  y += BAND_H;
+
+  // ── LEGEND ──
+  y += 6;
+  const legendItems = [
+    { color:'#c53030', label:'Severe Mania' },
+    { color:'#dd6b20', label:'Moderate Mania' },
+    { color:'#b7791f', label:'Mild Mania' },
+    { color:'#276749', label:'Baseline' },
+    { color:'#2b6cb0', label:'Mild Depression' },
+    { color:'#2c5282', label:'Moderate Depression' },
+    { color:'#1a365d', label:'Severe Depression' },
+    { color:'#ed64a6', label:'Menstrual Period', circle: true },
+    { color:'#553c9a', label:'Sleep' },
+  ];
+  ctx.font = font(8.5, '600');
+  let lx = gx;
+  legendItems.forEach(item => {
+    if (lx + 100 > gx + GRID_W) return; // don't overflow
+    if (item.circle) {
+      ctx.beginPath();
+      ctx.arc(lx + 6, y + 6, 5.5, 0, Math.PI*2);
+      ctx.fillStyle = item.color; ctx.fill();
+    } else {
+      rect(lx, y, 12, 12, item.color);
+    }
+    ctx.font = font(8.5, '500');
+    ctx.fillStyle = '#718096';
+    ctx.fillText(item.label, lx + 16, y + 9);
+    lx += 16 + ctx.measureText(item.label).width + 14;
+  });
+  y += LEG_H;
+
+  // ── FOOTER ──
+  const genDate = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  text(`Generated: ${genDate}`, gx, y + 12, '#a0aec0', 8, '400');
+
+  return canvas;
+}
+
+// ── Stack multiple single-month canvases into one tall image ──
+function buildMultiMonthCanvas(sYear, sMonth, eYear, eMonth) {
+  const GAP = 20;   // logical px gap between months
+  const SCALE = 2;
+
+  const canvases = [];
+  let y = sYear, m = sMonth;
+  while (y < eYear || (y === eYear && m <= eMonth)) {
+    canvases.push(buildExportCanvas(y, m));
+    m++;
+    if (m > 11) { m = 0; y++; }
+  }
+
+  if (canvases.length === 1) return canvases[0];
+
+  const W  = canvases[0].width;
+  const H  = canvases.reduce((s, c) => s + c.height, 0)
+           + (canvases.length - 1) * GAP * SCALE;
+
+  const combined = document.createElement('canvas');
+  combined.width  = W;
+  combined.height = H;
+  const ctx = combined.getContext('2d');
+  ctx.fillStyle = '#edf2f7';
+  ctx.fillRect(0, 0, W, H);
+
+  let dy = 0;
+  canvases.forEach((c, i) => {
+    if (i > 0) dy += GAP * SCALE;
+    ctx.drawImage(c, 0, dy);
+    dy += c.height;
+  });
+
+  return combined;
+}
+
+let _exportDataURL  = null;
+let _exportFilename = 'MoodChart.png';
+
+// ── Step 1: open the date-range dialog ──
+window.doExport = function() {
+  const nowY = _now.getFullYear();
+  const nowM = _now.getMonth();
+
+  // Populate year dropdowns: 3 years back → current year
+  ['rangeStartYear','rangeEndYear'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '';
+    for (let yr = nowY - 3; yr <= nowY; yr++) {
+      const opt = document.createElement('option');
+      opt.value = yr;
+      opt.textContent = yr;
+      if (yr === nowY) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  });
+
+  // Populate month dropdowns
+  ['rangeStartMonth','rangeEndMonth'].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '';
+    MONTHS.forEach((name, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = name;
+      if (i === nowM) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  });
+
+  document.getElementById('rangeError').textContent = '';
+  document.getElementById('rangeModal').classList.remove('hidden');
+};
+
+// ── Step 2: validate range, build canvas, show preview ──
+window.doRangeConfirm = function() {
+  const sM = +document.getElementById('rangeStartMonth').value;
+  const sY = +document.getElementById('rangeStartYear').value;
+  const eM = +document.getElementById('rangeEndMonth').value;
+  const eY = +document.getElementById('rangeEndYear').value;
+
+  const errEl = document.getElementById('rangeError');
+  if (eY < sY || (eY === sY && eM < sM)) {
+    errEl.textContent = '"To" month must be the same as or after the "From" month.';
+    return;
+  }
+  errEl.textContent = '';
+
+  // Build filename
+  const pt = (patientName || 'Patient').replace(/\s+/g, '_');
+  if (sY === eY && sM === eM) {
+    _exportFilename = `MoodChart_${pt}_${MONTHS[sM]}_${sY}.png`;
+  } else {
+    _exportFilename = `MoodChart_${pt}_${MONTHS[sM]}${sY}_to_${MONTHS[eM]}${eY}.png`;
+  }
+
+  // Close range dialog, open preview dialog
+  document.getElementById('rangeModal').classList.add('hidden');
+
+  const canvas = buildMultiMonthCanvas(sY, sM, eY, eM);
+  _exportDataURL = canvas.toDataURL('image/png');
+  document.getElementById('exportPreview').src = _exportDataURL;
+  document.getElementById('exportModal').classList.remove('hidden');
+};
+
+// ── Step 3: download the PNG ──
+window.doDownload = function() {
+  if (!_exportDataURL) return;
+  const a = document.createElement('a');
+  a.href = _exportDataURL;
+  a.download = _exportFilename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+};
+
+window.closeRangeModal = function() {
+  document.getElementById('rangeModal').classList.add('hidden');
+};
+
+window.closeExportModal = function() {
+  document.getElementById('exportModal').classList.add('hidden');
+  _exportDataURL = null;
+};
+
+// Close either modal when clicking the dark overlay behind it
+document.addEventListener('click', e => {
+  if (e.target === document.getElementById('rangeModal'))  closeRangeModal();
+  if (e.target === document.getElementById('exportModal')) closeExportModal();
+  if (e.target === document.getElementById('backupModal')) closeBackupModal();
+});
+
+// ─────────────────────────────────────────
+//  BACKUP & RESTORE
+// ─────────────────────────────────────────
+window.openBackupModal = function() {
+  // Reset restore UI state
+  document.getElementById('brConfirm').classList.remove('visible');
+  setStatus('', '');
+  document.getElementById('brFileInput').value = '';
+  document.getElementById('backupModal').classList.remove('hidden');
+};
+
+window.closeBackupModal = function() {
+  document.getElementById('backupModal').classList.add('hidden');
+};
+
+function setStatus(msg, type) {
+  const el = document.getElementById('brStatus');
+  el.textContent = msg;
+  el.className = 'br-status' + (type ? ' ' + type : '');
+}
+
+// ── BACKUP: collect all mc_* keys and download as JSON ──
+window.doBackupDownload = function() {
+  const backup = { version: 1, exported: new Date().toISOString(), data: {} };
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('mc_')) {
+      try { backup.data[k] = JSON.parse(localStorage.getItem(k)); }
+      catch(e) { backup.data[k] = localStorage.getItem(k); }
+    }
+  }
+
+  const json = JSON.stringify(backup, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const date = new Date().toISOString().slice(0,10);
+  const pt   = (patientName || 'Patient').replace(/\s+/g, '_');
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `MoodChartBackup_${pt}_${date}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+// ── RESTORE: read file, validate, confirm, import ──
+let _pendingRestore = null;
+
+window.openRestoreFilePicker = function() {
+  document.getElementById('brConfirm').classList.remove('visible');
+  setStatus('', '');
+  document.getElementById('brFileInput').click();
+};
+
+window.onRestoreFileChosen = function(input) {
+  const file = input.files[0];
+  if (!file) return;
+  setStatus('Reading file…', '');
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    let backup;
+    try { backup = JSON.parse(e.target.result); }
+    catch(err) { setStatus('⚠ File is not valid JSON.', 'err'); return; }
+
+    // Basic validation
+    if (!backup.data || typeof backup.data !== 'object') {
+      setStatus('⚠ This doesn\'t look like a Mood Chart backup file.', 'err');
+      return;
+    }
+
+    const keys = Object.keys(backup.data).filter(k => k.startsWith('mc_'));
+    if (keys.length === 0) {
+      setStatus('⚠ No mood chart data found in this file.', 'err');
+      return;
+    }
+
+    // Count months (keys that aren't mc_patient)
+    const monthKeys = keys.filter(k => k !== 'mc_patient');
+    const patientKey = backup.data['mc_patient'] || '(unnamed)';
+
+    _pendingRestore = backup.data;
+
+    const msg = document.getElementById('brConfirmMsg');
+    msg.textContent =
+      `This file contains ${monthKeys.length} month${monthKeys.length !== 1 ? 's' : ''} of data` +
+      (backup.data['mc_patient'] ? ` for "${backup.data['mc_patient']}"` : '') +
+      `. Any matching months already on this device will be overwritten. Continue?`;
+
+    setStatus('', '');
+    document.getElementById('brConfirm').classList.add('visible');
+  };
+  reader.onerror = () => setStatus('⚠ Could not read the file.', 'err');
+  reader.readAsText(file);
+
+  // Reset input so the same file can be chosen again if needed
+  input.value = '';
+};
+
+window.doRestoreConfirm = function() {
+  if (!_pendingRestore) return;
+
+  Object.entries(_pendingRestore).forEach(([k, v]) => {
+    try {
+      localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v));
+    } catch(e) {}
+  });
+
+  _pendingRestore = null;
+  document.getElementById('brConfirm').classList.remove('visible');
+
+  // Reload patient name and current month from the freshly imported data
+  patientName = localStorage.getItem('mc_patient') || patientName;
+  document.getElementById('nameInp').value = patientName;
+  loadMonth();
+  render();
+
+  setStatus('✓ Data restored successfully.', 'ok');
+};
+
+window.doRestoreCancel = function() {
+  _pendingRestore = null;
+  document.getElementById('brConfirm').classList.remove('visible');
+  setStatus('', '');
+  document.getElementById('brFileInput').value = '';
+};
+
+// ─────────────────────────────────────────
+//  BOOT
+// ─────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Restore patient name
+  patientName = localStorage.getItem('mc_patient') || '';
+  const nameInp = document.getElementById('nameInp');
+  nameInp.value = patientName;
+  nameInp.addEventListener('input', () => {
+    patientName = nameInp.value.trim();
+    loadMonth();
+    render();
+    saveMonth();
+  });
+
+  document.getElementById('prevBtn').addEventListener('click', () => goMonth(-1));
+  document.getElementById('nextBtn').addEventListener('click', () => goMonth(+1));
+  // Backup / Restore
+  document.getElementById('backupBtn').addEventListener('click', openBackupModal);
+  document.getElementById('brCloseBtn').addEventListener('click', closeBackupModal);
+  document.getElementById('brDownloadBtn').addEventListener('click', doBackupDownload);
+  document.getElementById('brRestoreBtn').addEventListener('click', openRestoreFilePicker);
+  document.getElementById('brFileInput').addEventListener('change', function() { onRestoreFileChosen(this); });
+  document.getElementById('brConfirmYes').addEventListener('click', doRestoreConfirm);
+  document.getElementById('brConfirmNo').addEventListener('click', doRestoreCancel);
+
+  // Export chart
+  document.getElementById('exportBtn').addEventListener('click', doExport);
+  document.getElementById('rangeConfirmBtn').addEventListener('click', doRangeConfirm);
+  document.getElementById('rangeCancelBtn').addEventListener('click', closeRangeModal);
+  document.getElementById('downloadBtn').addEventListener('click', doDownload);
+  document.getElementById('closeModalBtn').addEventListener('click', closeExportModal);
+
+  loadMonth();
+  updateMonthLabel();
+  render();
+
+  // Register service worker for PWA offline support
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+});
+</script>
+</body>
+</html>
