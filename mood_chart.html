@@ -1140,8 +1140,21 @@ function render() {
   h += `<tr class="spacer-row"><td colspan="32" style="height:18px;background:#f7fafc;border:none;padding:0;"></td></tr>`;
   h += `</tbody>`;
 
-  // ── SLEEP ROW ──
-  h += `<tbody><tr class="sleep-row">`;
+  // ── SLEEP ROW (with repeated day numbers) ──
+  h += `<tbody>`;
+  h += `<tr>`;
+  h += `<td class="th-label-col" style="padding:4px 6px 4px 8px;background:#f7fafc;font-weight:600;position:sticky;left:0;z-index:3;box-shadow:2px 0 4px rgba(0,0,0,0.06);border-right:2px solid #e2e8f0;">
+    <span style="color:#718096;font-weight:600;font-size:0.68rem;">Days of Month</span>
+  </td>`;
+  for (let d = 1; d <= 31; d++) {
+    let cls = '';
+    if      (d > total)    cls = 'd-off';
+    else if (isToday(d))   cls = 'd-today';
+    else if (isFuture(d))  cls = 'd-future';
+    h += `<td class="${cls}" style="text-align:center;font-weight:700;font-size:0.72rem;padding:4px 0;color:#4a5568;">${d}</td>`;
+  }
+  h += `</tr>`;
+  h += `<tr class="sleep-row">`;
   h += `<td class="lbl sleep-lbl" style="border-left:4px solid #805ad5;">
     <span class="l-name" style="color:#553c9a;">Hours of Sleep</span>
     <span class="l-desc">Enter nightly hours slept (e.g. 7.5)</span>

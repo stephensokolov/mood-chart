@@ -2,7 +2,7 @@
   "name": "Mood Chart",
   "short_name": "Mood Chart",
   "description": "Daily mood tracking for bipolar disorder",
-  "start_url": "/mood_chart.html",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#edf2f7",
   "theme_color": "#2b6cb0",

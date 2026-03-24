@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE = 'moodchart-v1';
+const CACHE = 'moodchart-v2';
 const ASSETS = ['mood_chart.html', 'manifest.json'];
 
 self.addEventListener('install', e => {
