@@ -26,6 +26,9 @@ git@github.com:stephensokolov/mood-chart.git
 ## How to deploy
 Push to `main` branch — GitHub Pages auto-deploys within ~1 minute.
 
+## Local project path
+`~/Projects/mood-chart-app`
+
 ## How to run locally
 A Python static server is configured in `.claude/launch.json`. Use `preview_start` with name "Python Static Server" or run:
 ```
